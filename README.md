@@ -126,7 +126,9 @@ before writing any prompt.
 ## Repo layout
 
 ```
+README.md                       # this file — for humans
 SKILL.md                        # what the agent reads
+LICENSE                         # MIT
 references/
   comfyui_config.md             # how the template system works, troubleshooting
   prompt_conventions.md         # per-asset prompt dialects
@@ -163,4 +165,5 @@ without ComfyUI.
 
 ## License
 
-Not yet chosen. Add a `LICENSE` file before publishing.
+MIT — see [LICENSE](LICENSE). Use it, fork it, sell it, ship it closed. Just keep
+the copyright notice.
