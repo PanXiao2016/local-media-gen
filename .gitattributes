@@ -1,0 +1,12 @@
+# Normalize line endings — the repo is edited on Windows but consumed everywhere
+* text=auto eol=lf
+
+*.py   text eol=lf
+*.md   text eol=lf
+*.json text eol=lf
+
+# Binary
+*.png  binary
+*.jpg  binary
+*.mp4  binary
+*.zip  binary

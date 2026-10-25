@@ -1,0 +1,30 @@
+# Generated output
+outputs/
+converted/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# Local scratch — never commit personal media
+*.png
+*.jpg
+*.jpeg
+*.webp
+*.mp4
+*.webm
+*.mov
+!assets/**/*.png

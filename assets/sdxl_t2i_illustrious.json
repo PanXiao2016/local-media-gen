@@ -1,0 +1,96 @@
+{
+  "25": {
+    "class_type": "EmptyLatentImage",
+    "inputs": {
+      "width": 832,
+      "height": 1216,
+      "batch_size": 1
+    }
+  },
+  "45": {
+    "class_type": "CheckpointLoaderSimple",
+    "inputs": {
+      "ckpt_name": "waiIllustriousSDXL_v170.safetensors"
+    }
+  },
+  "51": {
+    "class_type": "CLIPSetLastLayer",
+    "inputs": {
+      "clip": [
+        "45",
+        1
+      ],
+      "stop_at_clip_layer": -2
+    }
+  },
+  "36": {
+    "class_type": "CLIPTextEncode",
+    "inputs": {
+      "clip": [
+        "51",
+        0
+      ],
+      "text": "masterpiece, best quality, newest, absurdres, highres, very aesthetic, 1girl, solo, looking at the viewer, detailed background, soft lighting"
+    }
+  },
+  "39": {
+    "class_type": "CLIPTextEncode",
+    "inputs": {
+      "clip": [
+        "51",
+        0
+      ],
+      "text": "worst quality, low quality, score_1, score_2, score_3, artist name, bad anatomy, bad hands, extra digits, watermark, signature"
+    }
+  },
+  "42": {
+    "class_type": "KSampler",
+    "inputs": {
+      "model": [
+        "45",
+        0
+      ],
+      "positive": [
+        "36",
+        0
+      ],
+      "negative": [
+        "39",
+        0
+      ],
+      "latent_image": [
+        "25",
+        0
+      ],
+      "seed": 1234567890,
+      "steps": 20,
+      "cfg": 8.0,
+      "sampler_name": "euler_ancestral",
+      "scheduler": "normal",
+      "denoise": 1.0
+    }
+  },
+  "8": {
+    "class_type": "VAEDecode",
+    "inputs": {
+      "samples": [
+        "42",
+        0
+      ],
+      "vae": [
+        "45",
+        2
+      ]
+    }
+  },
+  "50": {
+    "class_type": "SaveImage",
+    "inputs": {
+      "images": [
+        "8",
+        0
+      ],
+      "filename_prefix": "sdxl/unsorted"
+    }
+  }
+}

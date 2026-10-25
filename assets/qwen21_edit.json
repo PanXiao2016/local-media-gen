@@ -1,0 +1,57 @@
+{
+  "1": {
+    "class_type": "QwenImageModelLoader",
+    "inputs": {
+      "unet_name": "qwen_image_2.1_int8_convrot.safetensors",
+      "clip_name": "qwen3vl_8b_int8_convrot.safetensors",
+      "vae_name": "qwen_image_2.1_vae_bf16.safetensors"
+    }
+  },
+  "2": {
+    "class_type": "LoadImage",
+    "inputs": {
+      "image": "velina_01_front_full.jpg"
+    }
+  },
+  "3": {
+    "class_type": "TextEncodeQwenImage21",
+    "inputs": {
+      "clip": ["1", 1],
+      "prompt": "change her outfit to a white robe",
+      "negative_prompt": "",
+      "resolution": 1024,
+      "vae": ["1", 2],
+      "images.image_1": ["2", 0]
+    }
+  },
+  "4": {
+    "class_type": "QwenImageKSampler",
+    "inputs": {
+      "model": ["1", 0],
+      "positive": ["3", 0],
+      "negative": ["3", 1],
+      "latent_image": ["3", 2],
+      "seed": 0,
+      "steps": 20,
+      "cfg": 2.5,
+      "sampler_name": "euler",
+      "scheduler": "simple",
+      "denoise": 1.0,
+      "denoise_mode": "comfy"
+    }
+  },
+  "5": {
+    "class_type": "VAEDecode",
+    "inputs": {
+      "samples": ["4", 0],
+      "vae": ["1", 2]
+    }
+  },
+  "6": {
+    "class_type": "SaveImage",
+    "inputs": {
+      "images": ["5", 0],
+      "filename_prefix": "qwen_edit/edit"
+    }
+  }
+}

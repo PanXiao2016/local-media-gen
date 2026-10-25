@@ -1,0 +1,130 @@
+{
+  "description": "Krea2 Turbo 文生图（iq4_xs GGUF + Qwen3-VL-4B 文本编码器 + Qwen-Image VAE）。蒸馏 turbo 模型，10 步 cfg 1.0 即可出图，约 30~60 秒/张。画风偏写实/摄影，与 Illustrious 系的二次元标签流完全不同，适合真人质感与光影。",
+  "kind": "image",
+  "params": {
+    "prompt": {
+      "type": "string",
+      "required": true,
+      "description": "正向提示词，用自然语言长句描述，不要用 Danbooru 标签"
+    },
+    "negative": {
+      "type": "string",
+      "default": "",
+      "description": "负向提示词，turbo 模型 cfg=1.0 时基本无效，留空即可"
+    },
+    "width": {
+      "type": "int",
+      "default": 832,
+      "min": 256,
+      "max": 2048,
+      "description": "图片宽度，建议总量约 1MP（如 832x1216 / 1024x1024）"
+    },
+    "height": {
+      "type": "int",
+      "default": 1216,
+      "min": 256,
+      "max": 2048,
+      "description": "图片高度"
+    },
+    "steps": {
+      "type": "int",
+      "default": 10,
+      "min": 1,
+      "max": 50,
+      "description": "采样步数。turbo：8=构图更听话，10=均衡，12=面部细节更多"
+    },
+    "cfg": {
+      "type": "float",
+      "default": 1.0,
+      "min": 0.0,
+      "max": 10.0,
+      "description": "引导强度，turbo 模型固定 1.0"
+    },
+    "seed": {
+      "type": "int",
+      "default": -1,
+      "description": "随机种子，-1 表示每次随机"
+    },
+    "sampler_name": {
+      "type": "string",
+      "default": "euler",
+      "description": "采样器"
+    },
+    "scheduler": {
+      "type": "string",
+      "default": "simple",
+      "description": "噪声调度器"
+    },
+    "unet_name": {
+      "type": "string",
+      "default": "krea2_turbo-iq4_xs.gguf",
+      "description": "Krea2 主模型（GGUF 量化）"
+    },
+    "clip_name": {
+      "type": "string",
+      "default": "qwen3vl_4b_int8_convrot.safetensors",
+      "description": "文本编码器，必须是 Qwen3-VL-4B"
+    },
+    "vae_name": {
+      "type": "string",
+      "default": "qwen_image_vae.safetensors",
+      "description": "VAE，Krea2 用 Qwen-Image 的 VAE，不是 Flux 的 ae.safetensors"
+    },
+    "filename_prefix": {
+      "type": "string",
+      "default": "krea2_t2i/krea2",
+      "description": "输出文件名前缀"
+    },
+    "blocks_to_swap": {
+      "type": "int",
+      "default": 8,
+      "min": 0,
+      "max": 28,
+      "description": "卸载到内存的 transformer 块数（从第 0 块起）。越大越省显存、越慢。8GB 卡从 8 开始试"
+    }
+  },
+  "nodes": {
+    "1": {
+      "inputs": {
+        "unet_name": "{unet_name}",
+        "clip_name": "{clip_name}",
+        "vae_name": "{vae_name}"
+      }
+    },
+    "2": {
+      "inputs": {
+        "text": "{prompt}"
+      }
+    },
+    "3": {
+      "inputs": {
+        "text": "{negative}"
+      }
+    },
+    "4": {
+      "inputs": {
+        "width": "{width}",
+        "height": "{height}"
+      }
+    },
+    "5": {
+      "inputs": {
+        "seed": "{seed}",
+        "steps": "{steps}",
+        "cfg": "{cfg}",
+        "sampler_name": "{sampler_name}",
+        "scheduler": "{scheduler}"
+      }
+    },
+    "7": {
+      "inputs": {
+        "filename_prefix": "{filename_prefix}"
+      }
+    },
+    "8": {
+      "inputs": {
+        "blocks_to_swap": "{blocks_to_swap}"
+      }
+    }
+  }
+}

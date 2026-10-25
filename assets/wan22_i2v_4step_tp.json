@@ -1,0 +1,146 @@
+{
+  "description": "Wan2.2 I2V 14B 四步图生视频（GGUF 高低噪双模型分段采样 + RIFE 补帧 + H.264 MP4）。由 UI 工作流自动转换而来。",
+  "kind": "video",
+  "params": {
+    "image": {
+      "type": "string",
+      "required": true,
+      "description": "输入图片文件名，需已在 ComfyUI 的 input 目录中"
+    },
+    "prompt": {
+      "type": "string",
+      "required": true,
+      "description": "正向提示词，描述画面与运动"
+    },
+    "negative": {
+      "type": "string",
+      "default": "camera shake, jitter, flickering, morphing, face deformation, identity change, blurry, low quality, watermark",
+      "description": "负向提示词"
+    },
+    "width": {
+      "type": "int",
+      "default": 720,
+      "min": 256,
+      "max": 1280,
+      "description": "输出宽度"
+    },
+    "height": {
+      "type": "int",
+      "default": 720,
+      "min": 256,
+      "max": 1280,
+      "description": "输出高度"
+    },
+    "length": {
+      "type": "int",
+      "default": 81,
+      "min": 9,
+      "max": 121,
+      "description": "帧数，81 帧 @16fps 约 5 秒"
+    },
+    "steps": {
+      "type": "int",
+      "default": 4,
+      "min": 1,
+      "max": 30,
+      "description": "总采样步数，此模型为 4 步蒸馏版"
+    },
+    "split_step": {
+      "type": "int",
+      "default": 2,
+      "min": 1,
+      "max": 29,
+      "description": "高低噪模型切换点，需小于 steps"
+    },
+    "cfg": {
+      "type": "float",
+      "default": 1.0,
+      "min": 1.0,
+      "max": 10.0,
+      "description": "提示词引导强度，蒸馏模型通常用 1.0"
+    },
+    "seed": {
+      "type": "int",
+      "default": -1,
+      "description": "随机种子，-1 表示每次随机"
+    },
+    "fps": {
+      "type": "int",
+      "default": 16,
+      "min": 1,
+      "max": 60,
+      "description": "输出帧率"
+    },
+    "unet_high": {
+      "type": "string",
+      "default": "DasiwaWAN22I2V14BTastysinV8_q4High.gguf",
+      "description": "高噪阶段 GGUF 模型"
+    },
+    "unet_low": {
+      "type": "string",
+      "default": "DasiwaWAN22I2V14BTastysinV8_q4Low.gguf",
+      "description": "低噪阶段 GGUF 模型"
+    },
+    "filename_prefix": {
+      "type": "string",
+      "default": "wan22_i2v",
+      "description": "输出文件名前缀"
+    }
+  },
+  "nodes": {
+    "105": {
+      "inputs": {
+        "image": "{image}"
+      }
+    },
+    "6": {
+      "inputs": {
+        "text": "{prompt}"
+      }
+    },
+    "7": {
+      "inputs": {
+        "text": "{negative}"
+      }
+    },
+    "104": {
+      "inputs": {
+        "width": "{width}",
+        "height": "{height}",
+        "length": "{length}"
+      }
+    },
+    "57": {
+      "inputs": {
+        "steps": "{steps}",
+        "cfg": "{cfg}",
+        "noise_seed": "{seed}",
+        "end_at_step": "{split_step}"
+      }
+    },
+    "58": {
+      "inputs": {
+        "steps": "{steps}",
+        "cfg": "{cfg}",
+        "noise_seed": "{seed}",
+        "start_at_step": "{split_step}"
+      }
+    },
+    "74": {
+      "inputs": {
+        "unet_name": "{unet_high}"
+      }
+    },
+    "75": {
+      "inputs": {
+        "unet_name": "{unet_low}"
+      }
+    },
+    "93": {
+      "inputs": {
+        "frame_rate": "{fps}",
+        "filename_prefix": "{filename_prefix}"
+      }
+    }
+  }
+}

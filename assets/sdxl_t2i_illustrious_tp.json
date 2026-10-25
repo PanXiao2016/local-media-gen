@@ -1,0 +1,138 @@
+{
+  "description": "SDXL 光辉系（waiIllustrious）单次文生图，由 UI 工作流自动转换而来。适合快速出图，无 hires 与修复环节。",
+  "kind": "image",
+  "params": {
+    "prompt": {
+      "type": "string",
+      "required": true,
+      "description": "正向提示词"
+    },
+    "negative": {
+      "type": "string",
+      "default": "worst quality, low quality, score_1, score_2, score_3, artist name, bad anatomy, bad hands, extra digits, watermark, signature",
+      "description": "负向提示词"
+    },
+    "seed": {
+      "type": "int",
+      "default": -1,
+      "description": "随机种子，-1 表示每次随机"
+    },
+    "width": {
+      "type": "int",
+      "default": 832,
+      "min": 256,
+      "max": 2048,
+      "description": "图片宽度"
+    },
+    "height": {
+      "type": "int",
+      "default": 1216,
+      "min": 256,
+      "max": 2048,
+      "description": "图片高度"
+    },
+    "batch_size": {
+      "type": "int",
+      "default": 1,
+      "min": 1,
+      "max": 8,
+      "description": "一次生成几张"
+    },
+    "steps": {
+      "type": "int",
+      "default": 20,
+      "min": 1,
+      "max": 100,
+      "description": "采样步数"
+    },
+    "cfg": {
+      "type": "float",
+      "default": 8.0,
+      "min": 1.0,
+      "max": 20.0,
+      "description": "提示词引导强度"
+    },
+    "sampler_name": {
+      "type": "string",
+      "default": "euler_ancestral",
+      "choices": [
+        "euler",
+        "euler_ancestral",
+        "dpmpp_2m",
+        "dpmpp_2m_sde",
+        "dpmpp_2m_sde_gpu",
+        "dpmpp_3m_sde",
+        "ddim",
+        "uni_pc",
+        "lcm"
+      ],
+      "description": "采样器"
+    },
+    "scheduler": {
+      "type": "string",
+      "default": "normal",
+      "choices": ["normal", "karras", "exponential", "sgm_uniform", "simple", "ddim_uniform"],
+      "description": "噪声调度器"
+    },
+    "clip_skip": {
+      "type": "int",
+      "default": -2,
+      "min": -24,
+      "max": -1,
+      "description": "CLIP 跳过层数，-2 为常用值"
+    },
+    "ckpt_name": {
+      "type": "string",
+      "default": "waiIllustriousSDXL_v170.safetensors",
+      "description": "底模文件名"
+    },
+    "filename_prefix": {
+      "type": "string",
+      "default": "sdxl/unsorted",
+      "description": "输出文件名前缀"
+    }
+  },
+  "nodes": {
+    "36": {
+      "inputs": {
+        "text": "{prompt}"
+      }
+    },
+    "39": {
+      "inputs": {
+        "text": "{negative}"
+      }
+    },
+    "25": {
+      "inputs": {
+        "width": "{width}",
+        "height": "{height}",
+        "batch_size": "{batch_size}"
+      }
+    },
+    "42": {
+      "inputs": {
+        "seed": "{seed}",
+        "steps": "{steps}",
+        "cfg": "{cfg}",
+        "sampler_name": "{sampler_name}",
+        "scheduler": "{scheduler}"
+      }
+    },
+    "51": {
+      "inputs": {
+        "stop_at_clip_layer": "{clip_skip}"
+      }
+    },
+    "45": {
+      "inputs": {
+        "ckpt_name": "{ckpt_name}"
+      }
+    },
+    "50": {
+      "inputs": {
+        "filename_prefix": "{filename_prefix}"
+      }
+    }
+  }
+}

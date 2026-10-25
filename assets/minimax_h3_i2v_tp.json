@@ -1,0 +1,19 @@
+{
+  "description": "MiniMax H3 本地图生视频（i2v）。注意：需要 Qwen3-VL-32B text encoder（5120维），当前缺该文件，需下载后把 clip_name 改为 32B。",
+  "kind": "video",
+  "params": {
+    "prompt": {"type": "string", "required": true, "description": "视频运动描述（英文效果更好）"},
+    "image": {"type": "string", "required": true, "description": "首帧图片文件名（需在 ComfyUI input 目录）"},
+    "width": {"type": "int", "default": 768, "min": 256, "max": 1280, "description": "视频宽度（8的倍数）"},
+    "height": {"type": "int", "default": 768, "min": 256, "max": 1280, "description": "视频高度（8的倍数）"},
+    "length": {"type": "int", "default": 81, "min": 5, "max": 161, "description": "帧数（会snap到17k+5网格，24fps）"},
+    "steps": {"type": "int", "default": 20, "min": 1, "max": 100, "description": "采样步数"},
+    "seed": {"type": "int", "default": -1, "description": "种子，-1随机"}
+  },
+  "nodes": {
+    "4": {"inputs": {"image": "{image}"}},
+    "5": {"inputs": {"prompt": "{prompt}", "width": "{width}", "height": "{height}", "length": "{length}"}},
+    "7": {"inputs": {"width": "{width}", "height": "{height}", "length": "{length}"}},
+    "8": {"inputs": {"seed": "{seed}", "steps": "{steps}"}}
+  }
+}

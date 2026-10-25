@@ -1,0 +1,161 @@
+{
+  "description": "Krea2 Turbo 身份编辑（identity edit v2 LoRA + Krea2EditModelPatch）。把参考图当 LoRA 用：角色作为 reference 进去，一句英文/中文指令改画面，身份特征比纯文生图稳。turbo 模型 10 步 cfg 1.0。与 Qwen-Image 2.1 编辑的区别：Krea2 走 reference latent 补丁，写实质感更强、更吃自然语言描述；Qwen 走视觉 token，对『保留原样』这类指令更听话。",
+  "kind": "image_edit",
+  "params": {
+    "image": {
+      "type": "string",
+      "required": true,
+      "description": "要编辑的参考图文件名，需已在 ComfyUI 的 input 目录中"
+    },
+    "prompt": {
+      "type": "string",
+      "required": true,
+      "description": "编辑指令，用自然语言描述改什么（英文效果更稳）"
+    },
+    "width": {
+      "type": "int",
+      "default": 832,
+      "min": 256,
+      "max": 2048,
+      "description": "输出宽度，1MP 左右最佳"
+    },
+    "height": {
+      "type": "int",
+      "default": 1216,
+      "min": 256,
+      "max": 2048,
+      "description": "输出高度"
+    },
+    "steps": {
+      "type": "int",
+      "default": 10,
+      "min": 1,
+      "max": 50,
+      "description": "采样步数。turbo：8=更听指令，10=均衡，12=面部细节更多"
+    },
+    "cfg": {
+      "type": "float",
+      "default": 1.0,
+      "min": 0.0,
+      "max": 10.0,
+      "description": "引导强度，turbo 固定 1.0"
+    },
+    "seed": {
+      "type": "int",
+      "default": -1,
+      "description": "随机种子，-1 表示每次随机"
+    },
+    "ref_boost": {
+      "type": "float",
+      "default": 4.0,
+      "min": 0.0,
+      "max": 1000.0,
+      "description": "保真度旋钮：模型多用力看参考图。1.0=旧版行为，4.0=推荐（更像原图），越高越死板"
+    },
+    "grounding_px": {
+      "type": "int",
+      "default": 768,
+      "min": 0,
+      "max": 4096,
+      "description": "文本编码器看到的参考图分辨率，768 为标准"
+    },
+    "lora_name": {
+      "type": "string",
+      "default": "krea2_identity_edit_v2_r128.safetensors",
+      "description": "Krea2 身份编辑 LoRA"
+    },
+    "lora_strength": {
+      "type": "float",
+      "default": 1.0,
+      "min": -2.0,
+      "max": 2.0,
+      "description": "LoRA 权重"
+    },
+    "unet_name": {
+      "type": "string",
+      "default": "krea2_turbo-iq4_xs.gguf",
+      "description": "Krea2 主模型"
+    },
+    "clip_name": {
+      "type": "string",
+      "default": "qwen3vl_4b_int8_convrot.safetensors",
+      "description": "文本编码器，必须 Qwen3-VL-4B 且含视觉权重（iq4 GGUF 版不兼容 llama.cpp，会报错）"
+    },
+    "vae_name": {
+      "type": "string",
+      "default": "qwen_image_vae.safetensors",
+      "description": "VAE，Krea2 用 Qwen-Image 的 VAE"
+    },
+    "filename_prefix": {
+      "type": "string",
+      "default": "krea2_edit/krea2_edit",
+      "description": "输出文件名前缀"
+    },
+    "blocks_to_swap": {
+      "type": "int",
+      "default": 12,
+      "min": 0,
+      "max": 28,
+      "description": "卸载到内存的 transformer 块数。8GB 卡 832x1216 用 12，1024x1024 用 12~14"
+    }
+  },
+  "nodes": {
+    "1": {
+      "inputs": {
+        "unet_name": "{unet_name}",
+        "clip_name": "{clip_name}",
+        "vae_name": "{vae_name}"
+      }
+    },
+    "2": {
+      "inputs": {
+        "lora_name": "{lora_name}",
+        "strength_model": "{lora_strength}"
+      }
+    },
+    "3": {
+      "inputs": {
+        "image": "{image}"
+      }
+    },
+    "5": {
+      "inputs": {
+        "ref_boost": "{ref_boost}"
+      }
+    },
+    "6": {
+      "inputs": {
+        "prompt": "{prompt}",
+        "grounding_px": "{grounding_px}"
+      }
+    },
+    "7": {
+      "inputs": {
+        "grounding_px": "{grounding_px}"
+      }
+    },
+    "8": {
+      "inputs": {
+        "width": "{width}",
+        "height": "{height}"
+      }
+    },
+    "9": {
+      "inputs": {
+        "seed": "{seed}",
+        "steps": "{steps}",
+        "cfg": "{cfg}"
+      }
+    },
+    "11": {
+      "inputs": {
+        "filename_prefix": "{filename_prefix}"
+      }
+    },
+    "12": {
+      "inputs": {
+        "blocks_to_swap": "{blocks_to_swap}"
+      }
+    }
+  }
+}

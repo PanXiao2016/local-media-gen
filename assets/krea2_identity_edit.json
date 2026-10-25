@@ -1,0 +1,170 @@
+{
+  "1": {
+    "class_type": "Krea2ModelLoader",
+    "inputs": {
+      "unet_name": "krea2_turbo-iq4_xs.gguf",
+      "clip_name": "qwen3vl_4b_int8_convrot.safetensors",
+      "vae_name": "qwen_image_vae.safetensors"
+    }
+  },
+  "2": {
+    "class_type": "LoraLoaderModelOnly",
+    "inputs": {
+      "model": [
+        "1",
+        0
+      ],
+      "lora_name": "krea2_identity_edit_v2_r128.safetensors",
+      "strength_model": 1.0
+    }
+  },
+  "3": {
+    "class_type": "LoadImage",
+    "inputs": {
+      "image": "velina_01_front_full.jpg"
+    }
+  },
+  "4": {
+    "class_type": "VAEEncode",
+    "inputs": {
+      "pixels": [
+        "3",
+        0
+      ],
+      "vae": [
+        "1",
+        2
+      ]
+    }
+  },
+  "5": {
+    "class_type": "Krea2EditModelPatch",
+    "inputs": {
+      "model": [
+        "2",
+        0
+      ],
+      "source_latent": [
+        "4",
+        0
+      ],
+      "ref_boost": 4.0,
+      "ref_boost_a": 1.0,
+      "fit_mode": "fit",
+      "vae": [
+        "1",
+        2
+      ],
+      "source_image": [
+        "3",
+        0
+      ],
+      "target_latent": [
+        "8",
+        0
+      ]
+    }
+  },
+  "6": {
+    "class_type": "Krea2EditGroundedEncode",
+    "inputs": {
+      "clip": [
+        "1",
+        1
+      ],
+      "prompt": "change her outfit",
+      "image": [
+        "3",
+        0
+      ],
+      "grounding_px": 768,
+      "system_prompt": ""
+    }
+  },
+  "7": {
+    "class_type": "Krea2EditGroundedEncode",
+    "inputs": {
+      "clip": [
+        "1",
+        1
+      ],
+      "prompt": "",
+      "image": [
+        "3",
+        0
+      ],
+      "grounding_px": 768,
+      "system_prompt": ""
+    }
+  },
+  "8": {
+    "class_type": "EmptySD3LatentImage",
+    "inputs": {
+      "width": 832,
+      "height": 1216,
+      "batch_size": 1
+    }
+  },
+  "9": {
+    "class_type": "Krea2KSampler",
+    "inputs": {
+      "model": [
+        "12",
+        0
+      ],
+      "positive": [
+        "6",
+        0
+      ],
+      "negative": [
+        "7",
+        0
+      ],
+      "latent_image": [
+        "8",
+        0
+      ],
+      "seed": 0,
+      "steps": 10,
+      "cfg": 1.0,
+      "sampler_name": "euler",
+      "scheduler": "simple",
+      "denoise": 1.0,
+      "denoise_mode": "comfy"
+    }
+  },
+  "10": {
+    "class_type": "VAEDecode",
+    "inputs": {
+      "samples": [
+        "9",
+        0
+      ],
+      "vae": [
+        "1",
+        2
+      ]
+    }
+  },
+  "11": {
+    "class_type": "SaveImage",
+    "inputs": {
+      "images": [
+        "10",
+        0
+      ],
+      "filename_prefix": "krea2_edit/krea2_edit"
+    }
+  },
+  "12": {
+    "class_type": "Krea2BlockSwap",
+    "inputs": {
+      "model": [
+        "5",
+        0
+      ],
+      "blocks_to_swap": 12,
+      "use_non_blocking": true
+    }
+  }
+}

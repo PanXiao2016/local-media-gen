@@ -1,0 +1,250 @@
+{
+  "description": "Wan-Animate-2 14B 角色动作迁移（distill int8，端到端双分支 DiT，无需骨架提取）。输入一张角色参考图 + 一段驱动视频，把视频里的动作、表情、手势迁移到参考角色上。8GB 显存实测 464×816 / 33 帧 / 6 步约 3.5 分钟。",
+  "kind": "video",
+  "params": {
+    "reference_image": {
+      "type": "string",
+      "required": true,
+      "description": "角色参考图文件名，需已在 ComfyUI 的 input 目录中。输出的取景范围跟随这张图——半身图只会出半身，想要全身动作就用全身参考图"
+    },
+    "driving_video": {
+      "type": "string",
+      "required": true,
+      "description": "驱动视频文件名，需已在 ComfyUI 的 input 目录中。动作、表情、手势都从这段视频迁移"
+    },
+    "prompt": {
+      "type": "string",
+      "required": true,
+      "description": "必须客观描述参考图，不能写动作。官方范式：「人物外观描述：……。背景描述：……。」描述与参考图不符会明显掉质量"
+    },
+    "negative": {
+      "type": "string",
+      "default": "色调艳丽，过曝，静态，细节模糊不清，字幕，风格，作品，画作，画面，静止，整体发灰，最差质量，低质量，JPEG压缩残留，丑陋的，残缺的，多余的手指，画得不好的手部，画得不好的脸部，畸形的，毁容的，形态畸形的肢体，手指融合，静止不动的画面，杂乱的背景，三条腿，背景人很多，倒着走",
+      "description": "负向提示词。distill 版 cfg=1.0 时负向不参与计算，保留仅为兼容 base 版"
+    },
+    "width": {
+      "type": "int",
+      "default": 464,
+      "min": 256,
+      "max": 1280,
+      "description": "输出宽度，需为 16 的倍数"
+    },
+    "height": {
+      "type": "int",
+      "default": 816,
+      "min": 256,
+      "max": 1280,
+      "description": "输出高度，需为 16 的倍数。与 width 一起应贴近裁剪后的驱动视频宽高比"
+    },
+    "length": {
+      "type": "int",
+      "default": 33,
+      "min": 5,
+      "max": 121,
+      "description": "帧数，需满足 4n+1。33 帧 @16fps 约 2 秒；81 帧约 5 秒，耗时约 3 倍"
+    },
+    "steps": {
+      "type": "int",
+      "default": 6,
+      "min": 1,
+      "max": 40,
+      "description": "采样步数。distill 版 6 步足够；base 版需 20–30 步且 cfg 提到 5–8"
+    },
+    "cfg": {
+      "type": "float",
+      "default": 1.0,
+      "min": 1.0,
+      "max": 10.0,
+      "description": "引导强度。distill 版必须 1.0（单趟前向）；调到 5–8 会变成双趟，耗时翻倍"
+    },
+    "shift": {
+      "type": "float",
+      "default": 5.0,
+      "min": 0.0,
+      "max": 20.0,
+      "description": "ModelSamplingSD3 的 shift。Animate-2 官方为 5.0（注意 Wan2.1 默认是 8.0）"
+    },
+    "fps": {
+      "type": "int",
+      "default": 16,
+      "min": 1,
+      "max": 30,
+      "description": "读取与输出帧率。同时作用于 VHS_LoadVideo 的 force_rate 和输出 frame_rate"
+    },
+    "pose_strength": {
+      "type": "float",
+      "default": 1.0,
+      "min": 0.0,
+      "max": 10.0,
+      "description": "驱动视频对动作的影响强度。1.0 是训练值；调低减弱贴合度，调高放大动作幅度"
+    },
+    "pose_start_percent": {
+      "type": "float",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 1.0,
+      "description": "从采样进度的百分之几开始施加姿态。窗口外会整段跳过姿态分支，也更快"
+    },
+    "pose_end_percent": {
+      "type": "float",
+      "default": 1.0,
+      "min": 0.0,
+      "max": 1.0,
+      "description": "到百分之几结束施加姿态。动作在前段基本定型，设 0.7 可放松细节同时保留编舞"
+    },
+    "reference_image_strength": {
+      "type": "float",
+      "default": 1.0,
+      "min": 0.0,
+      "max": 10.0,
+      "description": "生成帧对参考图 latent 的注意力强度。低于 1 放松身份一致性，高于 1 收紧防漂移"
+    },
+    "crop_x": {
+      "type": "int",
+      "required": true,
+      "min": 0,
+      "max": 4096,
+      "description": "驱动视频有效画面的左边界 x。必须实测：多帧逐列取最大亮度，阈值约 18 找内容起点。无黑边时填 0"
+    },
+    "crop_y": {
+      "type": "int",
+      "required": true,
+      "min": 0,
+      "max": 4096,
+      "description": "驱动视频有效画面的上边界 y。无黑边时填 0"
+    },
+    "crop_w": {
+      "type": "int",
+      "required": true,
+      "min": 16,
+      "max": 4096,
+      "description": "裁切宽度 = 有效画面右边界 - 左边界。无黑边时填视频原始宽度。不裁会把黑边当姿态内容，人物被压扁"
+    },
+    "crop_h": {
+      "type": "int",
+      "required": true,
+      "min": 16,
+      "max": 4096,
+      "description": "裁切高度 = 有效画面下边界 - 上边界。无黑边时填视频原始高度"
+    },
+    "skip_first_frames": {
+      "type": "int",
+      "default": 0,
+      "min": 0,
+      "max": 100000,
+      "description": "从驱动视频第几帧开始取，用于跳过片头"
+    },
+    "unet_name": {
+      "type": "string",
+      "default": "wan_animate_2_distill_int8_convrot.safetensors",
+      "description": "主模型。可选 wan_animate_2_distill_int8_convrot / wan_animate_2_int8_convrot / wan_animate_2_distill_bf16"
+    },
+    "clip_name": {
+      "type": "string",
+      "default": "umt5_xxl_fp8_e4m3fn_scaled.safetensors",
+      "description": "文本编码器，type 固定为 wan"
+    },
+    "vae_name": {
+      "type": "string",
+      "default": "wan_2.1_vae.safetensors",
+      "description": "必须是 Wan2.1 VAE（16 通道）。不能用 wan2.2_vae（48 通道）"
+    },
+    "clip_vision_name": {
+      "type": "string",
+      "default": "clip_vision_h.safetensors",
+      "description": "CLIP Vision 模型"
+    },
+    "seed": {
+      "type": "int",
+      "default": -1,
+      "description": "随机种子，-1 表示每次随机"
+    },
+    "filename_prefix": {
+      "type": "string",
+      "default": "wan_animate2",
+      "description": "输出文件名前缀"
+    }
+  },
+  "nodes": {
+    "1": {
+      "inputs": {
+        "unet_name": "{unet_name}"
+      }
+    },
+    "2": {
+      "inputs": {
+        "shift": "{shift}"
+      }
+    },
+    "3": {
+      "inputs": {
+        "clip_name": "{clip_name}"
+      }
+    },
+    "4": {
+      "inputs": {
+        "vae_name": "{vae_name}"
+      }
+    },
+    "5": {
+      "inputs": {
+        "clip_name": "{clip_vision_name}"
+      }
+    },
+    "6": {
+      "inputs": {
+        "text": "{prompt}"
+      }
+    },
+    "7": {
+      "inputs": {
+        "text": "{negative}"
+      }
+    },
+    "8": {
+      "inputs": {
+        "image": "{reference_image}"
+      }
+    },
+    "10": {
+      "inputs": {
+        "video": "{driving_video}",
+        "force_rate": "{fps}",
+        "frame_load_cap": "{length}",
+        "skip_first_frames": "{skip_first_frames}"
+      }
+    },
+    "16": {
+      "inputs": {
+        "x": "{crop_x}",
+        "y": "{crop_y}",
+        "width": "{crop_w}",
+        "height": "{crop_h}"
+      }
+    },
+    "11": {
+      "inputs": {
+        "width": "{width}",
+        "height": "{height}",
+        "length": "{length}",
+        "pose_strength": "{pose_strength}",
+        "pose_start_percent": "{pose_start_percent}",
+        "pose_end_percent": "{pose_end_percent}",
+        "reference_image_strength": "{reference_image_strength}"
+      }
+    },
+    "12": {
+      "inputs": {
+        "seed": "{seed}",
+        "steps": "{steps}",
+        "cfg": "{cfg}"
+      }
+    },
+    "15": {
+      "inputs": {
+        "frame_rate": "{fps}",
+        "filename_prefix": "{filename_prefix}"
+      }
+    }
+  }
+}

@@ -1,0 +1,112 @@
+{
+  "description": "Qwen-Image 2.1 指令式图像编辑。给一张参考图 + 一句自然语言指令，模型在保留角色特征的前提下修改画面（换装、改背景、改风格、加/删元素）。中文指令直接可用。注意：本机 RTX 4060 8GB，1024 分辨率 20 步约 2 分钟。",
+  "kind": "image_edit",
+  "params": {
+    "image": {
+      "type": "string",
+      "required": true,
+      "description": "要编辑的图片文件名，需已在 ComfyUI 的 input 目录中"
+    },
+    "prompt": {
+      "type": "string",
+      "required": true,
+      "description": "编辑指令，用自然语言描述「改成什么」，中英文均可"
+    },
+    "negative": {
+      "type": "string",
+      "default": "",
+      "description": "负向提示词，通常留空"
+    },
+    "resolution": {
+      "type": "int",
+      "default": 1024,
+      "min": 0,
+      "max": 2048,
+      "description": "参考图缩放到的总像素边长，0 表示保持原图尺寸（取 32 的倍数）"
+    },
+    "steps": {
+      "type": "int",
+      "default": 20,
+      "min": 4,
+      "max": 60,
+      "description": "采样步数，20 为标准"
+    },
+    "cfg": {
+      "type": "float",
+      "default": 2.5,
+      "min": 1.0,
+      "max": 10.0,
+      "description": "提示词引导强度，Qwen-Image 推荐 2.5"
+    },
+    "seed": {
+      "type": "int",
+      "default": -1,
+      "description": "随机种子，-1 表示每次随机"
+    },
+    "sampler_name": {
+      "type": "string",
+      "default": "euler",
+      "description": "采样器"
+    },
+    "scheduler": {
+      "type": "string",
+      "default": "simple",
+      "description": "噪声调度器"
+    },
+    "unet_name": {
+      "type": "string",
+      "default": "qwen_image_2.1_int8_convrot.safetensors",
+      "description": "主模型文件"
+    },
+    "clip_name": {
+      "type": "string",
+      "default": "qwen3vl_8b_int8_convrot.safetensors",
+      "description": "文本/视觉编码器（必须是 VL 版，否则读不到参考图）"
+    },
+    "vae_name": {
+      "type": "string",
+      "default": "qwen_image_2.1_vae_bf16.safetensors",
+      "description": "VAE 文件"
+    },
+    "filename_prefix": {
+      "type": "string",
+      "default": "qwen_edit/edit",
+      "description": "输出文件名前缀"
+    }
+  },
+  "nodes": {
+    "1": {
+      "inputs": {
+        "unet_name": "{unet_name}",
+        "clip_name": "{clip_name}",
+        "vae_name": "{vae_name}"
+      }
+    },
+    "2": {
+      "inputs": {
+        "image": "{image}"
+      }
+    },
+    "3": {
+      "inputs": {
+        "prompt": "{prompt}",
+        "negative_prompt": "{negative}",
+        "resolution": "{resolution}"
+      }
+    },
+    "4": {
+      "inputs": {
+        "seed": "{seed}",
+        "steps": "{steps}",
+        "cfg": "{cfg}",
+        "sampler_name": "{sampler_name}",
+        "scheduler": "{scheduler}"
+      }
+    },
+    "6": {
+      "inputs": {
+        "filename_prefix": "{filename_prefix}"
+      }
+    }
+  }
+}

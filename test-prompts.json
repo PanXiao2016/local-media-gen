@@ -1,0 +1,27 @@
+[
+  {
+    "id": 1,
+    "prompt": "画一张赛博朋克风格的雨夜街道，竖版手机壁纸尺寸",
+    "expected": "选择文生图工作流（sdxl_t2i_illustrious），先 --list-params 确认参数，再带 --param width/height 提交生成，成功后交付图片（宿主提供的文件呈现机制，WorkBuddy 下为 present_files）"
+  },
+  {
+    "id": 2,
+    "prompt": "把这张图的背景换成雪山，人物不变",
+    "expected": "识别为指令式图像编辑，选用 qwen21_edit.json（一张参考图+一句自然语言指令），而不是文生图工作流；提醒需提供参考图片"
+  },
+  {
+    "id": 3,
+    "prompt": "连不上 ComfyUI，生成一直失败",
+    "expected": "查错误处理表：提示用户启动 ComfyUI Desktop 而不是尝试自己启动；不反复重试、不静默失败"
+  },
+  {
+    "id": 4,
+    "prompt": "让这张角色图跳一段这个视频里的舞",
+    "expected": "选用 wan_animate2.json；主动索要驱动视频文件（reference_image 与 driving_video 都有默认值但那是测试残留，不能默认沿用）；先量驱动视频黑边再设 crop_x/y/w/h；prompt 按官方范式写「人物外观描述：…。背景描述：…。」且只描述参考图、不写动作"
+  },
+  {
+    "id": 5,
+    "prompt": "用 Krea2 生成，prompt 是：masterpiece, best quality, 1girl, solo, silver hair, red eyes",
+    "expected": "识别出这是 SDXL/Danbooru 标签式写法，与 krea2_t2i 要求的自然语言长句冲突；说明差异并给出改写版本让用户选，而不是静默改写后直接跑"
+  }
+]

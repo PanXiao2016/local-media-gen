@@ -1,0 +1,205 @@
+{
+  "38": {
+    "class_type": "CLIPLoader",
+    "inputs": {
+      "clip_name": "umt5_xxl_fp8_e4m3fn_scaled.safetensors",
+      "type": "wan",
+      "device": "default"
+    }
+  },
+  "39": {
+    "class_type": "VAELoader",
+    "inputs": {
+      "vae_name": "wan_2.1_vae.safetensors"
+    }
+  },
+  "74": {
+    "class_type": "UnetLoaderGGUF",
+    "inputs": {
+      "unet_name": "DasiwaWAN22I2V14BTastysinV8_q4High.gguf"
+    }
+  },
+  "75": {
+    "class_type": "UnetLoaderGGUF",
+    "inputs": {
+      "unet_name": "DasiwaWAN22I2V14BTastysinV8_q4Low.gguf"
+    }
+  },
+  "105": {
+    "class_type": "LoadImage",
+    "inputs": {
+      "image": "155809_00002 - 副本.png"
+    }
+  },
+  "6": {
+    "class_type": "CLIPTextEncode",
+    "inputs": {
+      "clip": [
+        "38",
+        0
+      ],
+      "text": "Locked-off static camera... she only sinks a little further down, in one single very slow motion, then holds still for the rest of the shot..."
+    }
+  },
+  "7": {
+    "class_type": "CLIPTextEncode",
+    "inputs": {
+      "clip": [
+        "38",
+        0
+      ],
+      "text": "camera shake, jitter, flickering, morphing, face deformation,\nidentity change, extra fingers, extra limbs, body distortion,\nclothing change, hairstyle change, color shift, duplicate person,\nduplicate body, unnatural motion, sudden movement, warping,\nbackground distortion, low quality, blur, artifacts,\npose change, standing up, leaning forward, face deformation, expression change, gaze drift, melted anatomy, warped genitals, extra limbs, object morphing,hovering, no contact, stopping midway, bobbing without lowering, hips not descending, fake motion"
+    }
+  },
+  "54": {
+    "class_type": "ModelSamplingSD3",
+    "inputs": {
+      "model": [
+        "74",
+        0
+      ],
+      "shift": 5
+    }
+  },
+  "55": {
+    "class_type": "ModelSamplingSD3",
+    "inputs": {
+      "model": [
+        "75",
+        0
+      ],
+      "shift": 5.000000000000001
+    }
+  },
+  "104": {
+    "class_type": "WanImageToVideo",
+    "inputs": {
+      "positive": [
+        "6",
+        0
+      ],
+      "negative": [
+        "7",
+        0
+      ],
+      "vae": [
+        "39",
+        0
+      ],
+      "start_image": [
+        "105",
+        0
+      ],
+      "width": 720,
+      "height": 720,
+      "length": 81,
+      "batch_size": 1
+    }
+  },
+  "57": {
+    "class_type": "KSamplerAdvanced",
+    "inputs": {
+      "model": [
+        "54",
+        0
+      ],
+      "positive": [
+        "104",
+        0
+      ],
+      "negative": [
+        "104",
+        1
+      ],
+      "latent_image": [
+        "104",
+        2
+      ],
+      "add_noise": "enable",
+      "noise_seed": 2956508290,
+      "steps": 4,
+      "cfg": 1,
+      "sampler_name": "euler",
+      "scheduler": "simple",
+      "start_at_step": 0,
+      "end_at_step": 2,
+      "return_with_leftover_noise": "enable"
+    }
+  },
+  "58": {
+    "class_type": "KSamplerAdvanced",
+    "inputs": {
+      "model": [
+        "55",
+        0
+      ],
+      "positive": [
+        "104",
+        0
+      ],
+      "negative": [
+        "104",
+        1
+      ],
+      "latent_image": [
+        "57",
+        0
+      ],
+      "add_noise": "disable",
+      "noise_seed": 2956508290,
+      "steps": 4,
+      "cfg": 1,
+      "sampler_name": "euler",
+      "scheduler": "simple",
+      "start_at_step": 2,
+      "end_at_step": 4,
+      "return_with_leftover_noise": "disable"
+    }
+  },
+  "8": {
+    "class_type": "VAEDecode",
+    "inputs": {
+      "samples": [
+        "58",
+        0
+      ],
+      "vae": [
+        "39",
+        0
+      ]
+    }
+  },
+  "103": {
+    "class_type": "RIFE VFI",
+    "inputs": {
+      "frames": [
+        "8",
+        0
+      ],
+      "ckpt_name": "rife49.pth",
+      "clear_cache_after_n_frames": 10,
+      "multiplier": 1,
+      "fast_mode": true,
+      "ensemble": true,
+      "scale_factor": 1,
+      "dtype": "float16",
+      "torch_compile": false,
+      "batch_size": 1
+    }
+  },
+  "93": {
+    "class_type": "VHS_VideoCombine",
+    "inputs": {
+      "images": [
+        "103",
+        0
+      ],
+      "frame_rate": 16,
+      "loop_count": 0,
+      "filename_prefix": "wan22_i2v",
+      "format": "video/nvenc_h264-mp4",
+      "pingpong": false,
+      "save_output": true
+    }
+  }
+}
