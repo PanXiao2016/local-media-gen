@@ -77,6 +77,7 @@ choose — a silent rewrite makes the result hard to reproduce.
 | A full-chain image (hires + face/hand fix) | `assets/velina_full_chain.json` (if present) |
 | A video from a still image | `assets/wan22_i2v_4step.json` |
 | **Animate a character with a driving video** | `assets/wan_animate2.json` |
+| **Character replacement (keep the driving video's background)** | `assets/wa_scail2.json` |
 | **Edit an existing image by instruction** | `assets/qwen21_edit.json` |
 | **Semi-realistic / photographic rendering** | `assets/krea2_t2i.json` |
 | Their own workflow | whatever path they provide |
@@ -156,9 +157,8 @@ Six things that will bite you, in the order they usually do:
    reference frame's latent, so the sampler emits extra frames. Wire its
    `trim_latent` output (index 3) into `TrimVideoLatent.trim_amount` or the
    output opens on a few frames of garbage.
-5. **`shift` is 5.0, not 8.0.** `WAN21_SCAIL2`-style models inherit Wan2.1's
-   shift of 8.0, but `WAN_Animate2` declares 5.0. Using 8.0 changes the noise
-   schedule and softens motion.
+5. **`shift` is 5.0, not 8.0.** `WAN_Animate2` declares 5.0 while Wan2.1's own
+   default is 8.0. Using 8.0 changes the noise schedule and softens motion.
 6. **Free VRAM before the first run.** A previous workflow can leave ~5GB
    resident, leaving only 3GB for a 16.65GB model. `POST /free` with
    `{"unload_models":true,"free_memory":true}` recovers it.
@@ -181,6 +181,60 @@ once instead of every step — roughly halves generation time. The cost is RAM:
 At `int4` that drops to about a quarter. On a 34GB machine running a 16.65GB
 model plus a 6.7GB text encoder, only enable it for long clips, and prefer
 `dtype=int4`.
+
+**Character replacement (SCAIL-2).** When the user wants to put *their*
+character into an existing video — keeping the video's background, lighting and
+camera — use `wa_scail2.json`. This is a different task from Wan-Animate-2:
+there the output is a new scene built around the reference; here the driving
+video's frame is preserved and only the person is swapped.
+
+Measured on the same RTX 4060 8GB: **512×896 / 33 frames / 20 steps in 20m08s**
+(48–74 s/it), and **9 frames / 6 steps in 116 s**. The int8 checkpoint has no
+distill variant, so 20 steps is the practical floor.
+
+Six things that will bite you:
+
+1. **Do NOT wire `TrimVideoLatent`.** `WanSCAILToVideo` also has a
+   `video_frame_offset` output, and copying the Wan-Animate-2 wiring is the
+   obvious mistake. But here it is a *resume offset* for segmented generation,
+   not a frame count to trim. Feeding it into `TrimVideoLatent` zeroes the time
+   dimension and VAEDecode dies with
+   `Calculated padded input size per channel: (0 x 112 x 64)`. The official
+   blueprint has no such node — go straight `KSampler → VAEDecode`.
+2. **The prompt is the opposite of Wan-Animate-2.** Describe the *final output*:
+   appearance **plus the action plus the scene**. Official example:
+   `A young woman ... is dancing outdoors on a sunny coastal hillside. She
+   performs energetic dance moves with one leg lifted and arms extended ...`.
+   Writing only appearance here under-drives the motion.
+3. **`replacement_mode` decides what happens to the background.** `true` keeps
+   the driving video's background and swaps the person. `false` gives a plain
+   motion transfer. It is a widget on `WanSCAILToVideo`, not a separate node.
+4. **nvfp4 will not work on Ada (RTX 40xx).** `supports_nvfp4_compute()` requires
+   compute capability ≥ 10 (Blackwell); on 8.9 the nvfp4 path is disabled and
+   every layer is dequantised on the fly — correct output, unusable speed. Use
+   `wan2.1_14B_SCAIL_2_int8_convrot.safetensors` (15.51GB). Same trap applies to
+   `mxfp8`.
+5. **SAM3 masks are optional.** `pose_video_mask` and `reference_image_mask`
+   exist to tell the model *which pixels are the person*. They improve
+   segmentation but are not required — this workflow omits both and produces
+   coherent results. If you later add them, the chain is
+   `驱动首帧 → ResizeImageMaskNode → SAM3_VideoTrack → SCAIL2ColoredMask`, with
+   a second `SAM3_VideoTrack` on the reference image, and
+   `sam3.safetensors` (3.21GB) in `models/sam3/`.
+6. **The outfit can drift more revealing than the reference.** Observed on the
+   bundled test case: the corset-style gown came back with a deeper neckline
+   than the source. Add explicit garment constraints to the prompt
+   (`fully covering her chest`, `modest neckline`) when that matters.
+
+Model dependencies: `wan2.1_14B_SCAIL_2_int8_convrot.safetensors` (15.51GB,
+ModelScope `Comfy-Org/SCAIL-2`), `wan_2.1_vae.safetensors`,
+`umt5_xxl_fp8_e4m3fn_scaled.safetensors`, `clip_vision_h.safetensors`.
+`ModelSamplingSD3.shift` is **5.0** — the official SCAIL-2 blueprint sets 5, not
+Wan2.1's default 8.
+
+Optional: the blueprint's fast path swaps in a lightx2v distill LoRA at 0.8 and
+drops to **6 steps at cfg 1.0**. That LoRA is not bundled here; without it, stay
+at 20 steps / cfg 5.
 
 ### Step 2: Inspect available parameters
 
@@ -393,6 +447,8 @@ Runtime
   (GGUF dual-model sampling + RIFE + H.264 MP4).
 - `wan_animate2.json` / `_tp.json` — Wan-Animate-2 14B character animation
   (reference image + driving video → animated character, no pose extraction).
+- `wa_scail2.json` / `_tp.json` — SCAIL-2 14B character replacement
+  (keeps the driving video's background, swaps in the reference character).
 - `krea2_identity_edit.json` / `_tp.json` — Krea2 character-consistency editing.
 - `minimax_h3_i2v.json` / `_tp.json` — MiniMax H3 local image-to-video.
   **Not verified end-to-end on this machine**: the 32B text encoder

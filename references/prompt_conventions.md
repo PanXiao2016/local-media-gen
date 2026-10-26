@@ -19,6 +19,7 @@ rejects them.
 | `krea2_identity_edit` | English preferred | One edit instruction | Usually empty | Long scene description |
 | `wan22_i2v_4step` | English preferred | Scene + camera + motion | Camera/morph negatives | Static-scene description only |
 | `wan_animate2` | Chinese (official) | `人物外观描述：…。背景描述：…。` | Present but inert at cfg=1.0 | Action words, mood words |
+| `wa_scail2` | English (official) | Appearance + **action** + scene | Standard video negatives | Appearance-only prompts |
 | `minimax_h3_i2v` | English preferred | Motion description | Standard video negatives | Long appearance descriptions |
 
 ## sdxl_t2i_illustrious
@@ -115,6 +116,49 @@ Rules that matter, in order of how often they are broken:
    do not enumerate every accessory.
 6. `negative` is inert at `cfg=1.0` on the distill checkpoint. It exists for the
    base checkpoint at cfg 5–8.
+
+## wa_scail2
+
+Character replacement. **This is the exact opposite of `wan_animate2`** — and
+getting it backwards is the single most common mistake, because both take a
+reference image plus a driving video.
+
+`wan_animate2` wants an objective description of the *reference image* and
+forbids action words. `wa_scail2` wants a description of the *final output*,
+and the action belongs in it. The official blueprint's own prompt:
+
+```
+A young woman with dark hair tied in a neat high bun, with a few loose strands
+framing her face, is dancing outdoors on a sunny coastal hillside. She has a
+normal-sized head and a slim face, with no hat, no headwear, and no oversized
+hair volume. She wears a fitted black long-sleeve crop top with a shoulder
+cutout, extremely baggy black cargo pants with straps and pockets, and chunky
+black combat boots. She performs energetic dance moves with one leg lifted and
+arms extended, moving naturally in front of a large tree, a small white stone
+house with a terracotta roof, and a bright blue sea.
+```
+
+Read that closely — it carries four things at once:
+
+1. **Who** — hair, face shape, build.
+2. **What she is doing** — `is dancing`, `performs energetic dance moves with
+   one leg lifted and arms extended`. Omit this and the motion goes limp.
+3. **What she wears** — down to garment cut and colour. Vague clothing lets the
+   model improvise, and it improvises toward more revealing.
+4. **Where** — the scene, which matters because `replacement_mode=true` keeps
+   the driving video's background; the text helps the model reconcile the two.
+
+Two habits from the official example worth copying:
+
+- **Negative constraints inside the positive prompt.** `no hat, no headwear, and
+  no oversized hair volume` — the model over-generates headwear and hair volume
+  on its own, so it is told not to. Same trick for anything the reference lacks.
+- **Explicit garment coverage.** If the reference outfit has a high neckline,
+  say so (`fully covering her chest, modest neckline`). Observed drift: a corset
+  gown came back noticeably more open than the source image.
+
+`negative` does work here (`cfg=5` by default), unlike the distill `wan_animate2`
+path — the bundled default is the standard Chinese video negative.
 
 ## minimax_h3_i2v
 

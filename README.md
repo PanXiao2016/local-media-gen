@@ -43,6 +43,7 @@ code changes.
 | Character-consistent editing | `krea2_identity_edit.json` | identity held by LoRA reference |
 | Image-to-video | `wan22_i2v_4step.json` | Wan2.2 14B, 4-step, GGUF |
 | **Character animation from a driving video** | `wan_animate2.json` | Wan-Animate-2 14B |
+| **Character replacement (keeps the video's background)** | `wa_scail2.json` | SCAIL-2 14B |
 | Image-to-video (experimental) | `minimax_h3_i2v.json` | **not verified end-to-end** |
 
 Character animation is the interesting one: give it a still image of a character
@@ -157,11 +158,15 @@ without ComfyUI.
 ## Status
 
 - `sdxl_t2i_illustrious`, `krea2_t2i`, `qwen21_edit`, `krea2_identity_edit`,
-  `wan22_i2v_4step`, `wan_animate2` — run end-to-end on the machine this was
-  built on (RTX 4060 8GB, Windows).
+  `wan22_i2v_4step`, `wan_animate2`, `wa_scail2` — run end-to-end on the machine
+  this was built on (RTX 4060 8GB, Windows).
 - `minimax_h3_i2v` — wiring only. The 32B text encoder loads and encodes, but a
   20.97GB INT8 UNET does not fit 8GB of VRAM without H3 block swap, which
   ComfyUI no longer provides. Treat it as a reference, not a working path.
+
+Measured on that card: Wan-Animate-2 does 464×816 / 33 frames / 6 steps in
+**216 s**; SCAIL-2 does 512×896 / 33 frames / 20 steps in **20m08s** (it has no
+distill checkpoint, so 20 steps is the floor).
 
 ## License
 

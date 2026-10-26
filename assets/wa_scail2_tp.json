@@ -1,0 +1,256 @@
+{
+  "description": "SCAIL-2 14B 角色动画 / 角色替换（int8_convrot，端到端双分支 DiT）。参考图 + 驱动视频，把驱动视频中人物的动作迁移到参考角色；replacement_mode=true 时保留驱动视频背景、只替换人物。",
+  "kind": "video",
+  "params": {
+    "reference_image": {
+      "type": "string",
+      "required": true,
+      "description": "角色参考图文件名，需已在 ComfyUI 的 input 目录中"
+    },
+    "driving_video": {
+      "type": "string",
+      "required": true,
+      "description": "驱动视频文件名，需已在 ComfyUI 的 input 目录中。动作、表情、手势从这段视频迁移"
+    },
+    "prompt": {
+      "type": "string",
+      "required": true,
+      "description": "英文。描述最终画面：人物外观 + 动作 + 场景。与 Wan-Animate-2 相反，这里要写动作"
+    },
+    "negative": {
+      "type": "string",
+      "default": "色调艳丽，过曝，静态，细节模糊不清，字幕，风格，作品，画作，画面，静止，整体发灰，最差质量，低质量，JPEG压缩残留，丑陋的，残缺的，多余的手指，画得不好的手部，画得不好的脸部，畸形的，毁容，形态畸形的肢体，手指融合，静止不动的画面，杂乱的背景，三条腿，背景人很多，倒着走",
+      "description": "负向提示词。cfg>1 时生效"
+    },
+    "width": {
+      "type": "int",
+      "default": 512,
+      "min": 256,
+      "max": 1280,
+      "description": "输出宽度，需为 32 的倍数。应贴近裁剪后驱动视频的宽高比"
+    },
+    "height": {
+      "type": "int",
+      "default": 896,
+      "min": 256,
+      "max": 1280,
+      "description": "输出高度，需为 32 的倍数"
+    },
+    "length": {
+      "type": "int",
+      "default": 33,
+      "min": 5,
+      "max": 121,
+      "description": "帧数，需满足 4n+1。33 帧 @16fps 约 2 秒；65 帧约 4 秒（官方默认），耗时约 2 倍"
+    },
+    "steps": {
+      "type": "int",
+      "default": 20,
+      "min": 4,
+      "max": 50,
+      "description": "采样步数。无 distill LoRA 时用 20-40；若套 lightx2v distill LoRA 可降到 6 步且 cfg=1.0"
+    },
+    "cfg": {
+      "type": "float",
+      "default": 5.0,
+      "min": 1.0,
+      "max": 10.0,
+      "description": "引导强度。官方非 distill 模式为 5.0；distill 模式必须 1.0"
+    },
+    "shift": {
+      "type": "float",
+      "default": 5.0,
+      "min": 0.0,
+      "max": 20.0,
+      "description": "ModelSamplingSD3 的 shift。官方 SCAIL-2 蓝图为 5.0（注意不是 Wan2.1 默认的 8.0）"
+    },
+    "pose_strength": {
+      "type": "float",
+      "default": 1.0,
+      "min": 0.0,
+      "max": 10.0,
+      "description": "驱动视频对动作的影响强度。1.0 是训练值"
+    },
+    "pose_start": {
+      "type": "float",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 1.0,
+      "description": "从采样进度的百分之几开始施加姿态"
+    },
+    "pose_end": {
+      "type": "float",
+      "default": 1.0,
+      "min": 0.0,
+      "max": 1.0,
+      "description": "到百分之几结束施加姿态"
+    },
+    "replacement_mode": {
+      "type": "bool",
+      "default": true,
+      "description": "true = 角色替换（保留驱动视频背景，只换人物）；false = 纯动作迁移（背景来自参考图侧）"
+    },
+    "previous_frame_count": {
+      "type": "int",
+      "default": 5,
+      "min": 1,
+      "max": 33,
+      "description": "首尾衔接帧数，用于分段生成时保持连贯。单段生成保持 5 即可"
+    },
+    "fps": {
+      "type": "int",
+      "default": 16,
+      "min": 1,
+      "max": 30,
+      "description": "读取与输出帧率"
+    },
+    "skip_first_frames": {
+      "type": "int",
+      "default": 0,
+      "min": 0,
+      "max": 10000,
+      "description": "跳过驱动视频开头的帧数"
+    },
+    "crop_x": {
+      "type": "int",
+      "required": true,
+      "min": 0,
+      "max": 4096,
+      "description": "驱动视频有效画面的左边界 x。无黑边时填 0"
+    },
+    "crop_y": {
+      "type": "int",
+      "required": true,
+      "min": 0,
+      "max": 4096,
+      "description": "驱动视频有效画面的上边界 y。无黑边时填 0"
+    },
+    "crop_w": {
+      "type": "int",
+      "required": true,
+      "min": 16,
+      "max": 4096,
+      "description": "裁切宽度 = 有效画面右边界 - 左边界。无黑边时填视频原始宽度"
+    },
+    "crop_h": {
+      "type": "int",
+      "required": true,
+      "min": 16,
+      "max": 4096,
+      "description": "裁切高度 = 有效画面下边界 - 上边界。无黑边时填视频原始高度"
+    },
+    "seed": {
+      "type": "int",
+      "default": -1,
+      "description": "随机种子。-1 表示每次随机"
+    },
+    "unet_name": {
+      "type": "string",
+      "default": "wan2.1_14B_SCAIL_2_int8_convrot.safetensors",
+      "description": "SCAIL-2 主模型文件名"
+    },
+    "clip_name": {
+      "type": "string",
+      "default": "umt5_xxl_fp8_e4m3fn_scaled.safetensors",
+      "description": "文本编码器"
+    },
+    "vae_name": {
+      "type": "string",
+      "default": "wan_2.1_vae.safetensors",
+      "description": "VAE（Wan2.1 版本，16 通道）"
+    },
+    "clip_vision_name": {
+      "type": "string",
+      "default": "clip_vision_h.safetensors",
+      "description": "CLIP Vision 模型"
+    },
+    "filename_prefix": {
+      "type": "string",
+      "default": "scail2/scail2",
+      "description": "输出文件前缀"
+    }
+  },
+  "nodes": {
+    "1": {
+      "inputs": {
+        "unet_name": "{unet_name}"
+      }
+    },
+    "2": {
+      "inputs": {
+        "shift": "{shift}"
+      }
+    },
+    "3": {
+      "inputs": {
+        "clip_name": "{clip_name}"
+      }
+    },
+    "4": {
+      "inputs": {
+        "vae_name": "{vae_name}"
+      }
+    },
+    "5": {
+      "inputs": {
+        "clip_name": "{clip_vision_name}"
+      }
+    },
+    "6": {
+      "inputs": {
+        "text": "{prompt}"
+      }
+    },
+    "7": {
+      "inputs": {
+        "text": "{negative}"
+      }
+    },
+    "8": {
+      "inputs": {
+        "image": "{reference_image}"
+      }
+    },
+    "10": {
+      "inputs": {
+        "video": "{driving_video}",
+        "force_rate": "{fps}",
+        "frame_load_cap": "{length}",
+        "skip_first_frames": "{skip_first_frames}"
+      }
+    },
+    "11": {
+      "inputs": {
+        "x": "{crop_x}",
+        "y": "{crop_y}",
+        "width": "{crop_w}",
+        "height": "{crop_h}"
+      }
+    },
+    "12": {
+      "inputs": {
+        "width": "{width}",
+        "height": "{height}",
+        "length": "{length}",
+        "pose_strength": "{pose_strength}",
+        "pose_start": "{pose_start}",
+        "pose_end": "{pose_end}",
+        "replacement_mode": "{replacement_mode}",
+        "previous_frame_count": "{previous_frame_count}"
+      }
+    },
+    "13": {
+      "inputs": {
+        "seed": "{seed}",
+        "steps": "{steps}",
+        "cfg": "{cfg}"
+      }
+    },
+    "16": {
+      "inputs": {
+        "frame_rate": "{fps}",
+        "filename_prefix": "{filename_prefix}"
+      }
+    }
+  }
+}
